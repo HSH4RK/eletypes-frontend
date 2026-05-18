@@ -128,11 +128,16 @@ const renderHighlighted = (text, highlights, theme) => {
     // named tab instead of navigating out. Useful for in-app CTAs
     // (e.g., the creator-recruit banner) where the destination is a
     // pitch page that lives inside this app, not an external link.
+    // Rendered as <a href="#"> with a click handler rather than
+    // <button> so the element flows inline inside the banner's flex
+    // container exactly like the external-link case — <button>'s
+    // default inline-block layout broke the banner across 3 lines.
     if (typeof matchedHighlight.link === "string" && matchedHighlight.link.startsWith("profile-tab:")) {
       const tab = matchedHighlight.link.slice("profile-tab:".length);
       parts.push(
-        <button
+        <a
           key={key++}
+          href="#"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -140,19 +145,10 @@ const renderHighlighted = (text, highlights, theme) => {
               new CustomEvent("eletypes-open-profile", { detail: { tab } })
             );
           }}
-          style={{
-            background: "transparent",
-            border: "none",
-            padding: 0,
-            font: "inherit",
-            color: theme.stats,
-            textDecoration: "underline",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          style={{ color: theme.stats, textDecoration: "underline", fontWeight: 600, cursor: "pointer" }}
         >
           {label}
-        </button>
+        </a>
       );
     } else if (matchedHighlight.link) {
       parts.push(

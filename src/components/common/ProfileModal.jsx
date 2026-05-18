@@ -69,7 +69,31 @@ const renderNewsHighlighted = (text, highlights, theme) => {
     }
 
     const label = matchedHighlight.placeholder;
-    if (matchedHighlight.link) {
+    // Mirror the `profile-tab:<id>` pseudo-URL handling from Logo.jsx
+    // — without this, clicking a highlight in the News tab whose link
+    // is "profile-tab:creators" sends the browser to that literal URL
+    // and goes nowhere. We intercept it and dispatch the same
+    // eletypes-open-profile event the banner uses, which the Logo
+    // listener turns into a tab switch on the already-open modal.
+    if (typeof matchedHighlight.link === "string" && matchedHighlight.link.startsWith("profile-tab:")) {
+      const tab = matchedHighlight.link.slice("profile-tab:".length);
+      parts.push(
+        <a
+          key={key++}
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.dispatchEvent(
+              new CustomEvent("eletypes-open-profile", { detail: { tab } })
+            );
+          }}
+          style={{ color: theme.stats, textDecoration: "underline", fontWeight: 600, cursor: "pointer" }}
+        >
+          {label}
+        </a>
+      );
+    } else if (matchedHighlight.link) {
       parts.push(
         <a
           key={key++}
