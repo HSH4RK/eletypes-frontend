@@ -69,6 +69,18 @@ const Stats = ({
 
   const accuracy = Math.round(statsCharCount[0]);
 
+  // Anti-cheat: the canonical WPM at end-of-test is derived from validated
+  // correct characters, not from averaging per-tick rolling snapshots. The
+  // old "mean of data[i].wpm" path was exploitable — a key-mash burst
+  // inflated early-tick samples, and even though wpmKeyStrokes was
+  // backspace-decremented (b540f56), the historical chart array kept the
+  // spike forever, so the submitted average stayed inflated. Correct-char
+  // count comes from history{} which only marks a char true after a real
+  // compare in getCharClassName, so mash+backspace contributes nothing.
+  const correctChars = statsCharCount[1] || 0;
+  const finalWpm =
+    (correctChars / 5) * (60 / Math.max(countDownConstant, 1));
+
   const data = typingTestHistory.map((history) => ({
     wpm: history.wpm,
     rawWpm: history.rawWpm,
@@ -130,14 +142,12 @@ const Stats = ({
   const [newBadges, setNewBadges] = useState([]);
   useEffect(() => {
     if (status === "finished" && !historySaved) {
-      const totalWpm = data.map((e) => e.wpm).reduce((a, b) => a + b, 0);
-      const avgWpm = data.length > 1 ? totalWpm / (data.length - 1) : 0;
       // Custom-words runs aren't recorded: scores depend on the user's chosen
       // words so they aren't comparable to random-mode history/badges/etc.
       // Leaderboard submission is also blocked downstream in Leaderboard.jsx.
-      if (avgWpm > 0 && !isCustomMode) {
-        addScore({ wpm: avgWpm, accuracy, ...modeParams });
-        const earned = evaluateBadges({ wpm: avgWpm, accuracy, ...modeParams });
+      if (finalWpm > 0 && !isCustomMode) {
+        addScore({ wpm: finalWpm, accuracy, ...modeParams });
+        const earned = evaluateBadges({ wpm: finalWpm, accuracy, ...modeParams });
         if (earned.length > 0) {
           setNewBadges(earned);
         }
@@ -254,12 +264,10 @@ const Stats = ({
   );
 
   const renderWpm = () => {
-    const totalWpm = data.map((e) => e.wpm).reduce((a, b) => a + b, 0);
-    const averageWpm = data.length > 1 ? totalWpm / (data.length - 1) : 0;
     return (
       <div>
         <h2 className="primary-stats-title">{t("wpm_label")}</h2>
-        <h1 className="primary-stats-value">{Math.round(averageWpm)}</h1>
+        <h1 className="primary-stats-value">{Math.round(finalWpm)}</h1>
       </div>
     );
   };
@@ -360,14 +368,7 @@ const Stats = ({
               </div>
             )}
             <Leaderboard
-              wpm={
-                data.length > 1
-                  ? Math.round(
-                      data.map((e) => e.wpm).reduce((a, b) => a + b, 0) /
-                        (data.length - 1)
-                    )
-                  : 0
-              }
+              wpm={Math.round(finalWpm)}
               accuracy={accuracy}
               language={language}
               difficulty={difficulty}
