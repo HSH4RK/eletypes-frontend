@@ -244,7 +244,7 @@ const FooterMenu = ({
                     style={{ whiteSpace: "pre-line", fontSize: "12px" }}
                   >
                     {t("github_tooltip")}
-                    <Link margin="inherit" href="https://muyangguo.xyz">
+                    <Link margin="inherit" href="https://muyangguo.com">
                       {t("author")}
                     </Link>
                     <Link
